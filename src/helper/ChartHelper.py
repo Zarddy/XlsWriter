@@ -10,21 +10,21 @@ class ChartHelper:
     def __init__(self) -> None:
         super().__init__()
         self.db = DatabaseHelper()
+        # 时间戳
+        self.time_string = time.strftime('%Y%m%d.%H%M%S', time.localtime())
 
 
     """
     导出设备故障记录，按单独故障类型分页
     """
     def export_device_fault_table(self):
-
-        # 时间戳
-        time_string = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-        filename = "故障记录表_%s.xlsx" % time_string
+        # 文件名
+        filename = "故障记录_表_%s.xlsx" % self.time_string
 
         # 创建一个excel
         workbook = xlsxwriter.Workbook(filename)
 
-        name_array = ["SN码", "客户名称", "故障类型备注", "出厂日期", "使用时长（小时）",
+        name_array = ["SN码", "客户名称", "故障类型备注", "使用时长（小时）", "出厂日期",
                 "故障发生日期", "故障摘要", "故障原因", "跟进人", "解决方法", "处理人", "处理结果", "备注"]
 
         # 获取所有故障类型
@@ -33,8 +33,7 @@ class ChartHelper:
         for category in category_list:
             # 标签名称
             sheet_name = category['category_name']
-
-            # 创建一个sheet
+            # 创建一个工作表
             worksheet = workbook.add_worksheet(sheet_name)
 
             # 自定义样式，加粗
@@ -42,26 +41,12 @@ class ChartHelper:
             header_format.set_align('center')
             header_format.set_align('vcenter')
 
-            # 日期格式
-            date_format = workbook.add_format({'num_format': 'yyyy-mm-dd'})
-
             # 写入数据
             worksheet.write_row('A1', name_array, cell_format=header_format)  # 类型
 
-            # 设置默认行高
-            worksheet.set_default_row(height=18)
-            # 设备单元格宽度
-            worksheet.set_column(0, 0, 15)
-            worksheet.set_column(1, 3, 13)
-            worksheet.set_column(4, 4, 16)
-            worksheet.set_column(6, 7, 30)
-            worksheet.set_column(9, 9, 30)
-            # 设置第5列的格式为日期
-            worksheet.set_column(first_col=5, last_col=5, width=14, cell_format=date_format)
-
             # 通过类型Id查出对应的故障记录
-            sql = 'SELECT device_sn, customer_name, fault_category_remark, production_time,' \
-                  ' usage_time, fault_time, fault_summary, fault_reason, follow_up_person, resolvent, `handler`,' \
+            sql = 'SELECT device_sn, customer_name, fault_category_remark, usage_time,' \
+                  ' production_time, fault_time, fault_summary, fault_reason, follow_up_person, resolvent, `handler`,' \
                   ' handling_result, remark from crm_device_fault_record where status=1 and fault_category_id=%d' % category['category_id']
             record_list = self.db.select(sql)
 
@@ -71,18 +56,39 @@ class ChartHelper:
                 v = record.values()
                 worksheet.write_row('A' + str(i+2),  v)
 
-        workbook.close()
-        pass
+            # 日期格式
+            date_format = workbook.add_format({'num_format': 'yyyy-mm-dd', 'font_size': '10'})
+            date_format.set_text_wrap()
+            date_format.set_align('top')
+            date_format.set_align('left')
 
+            # 设置默认行高
+            worksheet.set_default_row(height=26)
+
+            default_format = workbook.add_format({'font_size': '10'})
+            default_format.set_text_wrap()
+            default_format.set_align('top')
+            default_format.set_align('left')
+
+            # 设置第5列的格式为日期
+            worksheet.set_column(first_col=4, last_col=5, width=14, cell_format=date_format)
+            worksheet.set_column(first_col=6, last_col=12, cell_format=default_format)
+            # 设备单元格宽度
+            worksheet.set_column(0, 3, 16, cell_format=default_format)
+            worksheet.set_column(6, 7, 30, cell_format=default_format)  # 摘要
+            worksheet.set_column(9, 9, 30, cell_format=default_format)
+            # 设置第5列的格式为日期
+            worksheet.set_column(first_col=5, last_col=5, width=14, cell_format=date_format)
+
+        workbook.close()
 
     """
     导出设备故障记录，数据统计图表，按客户分页
     """
     def export_device_fault_chart(self):
 
-        # 时间戳
-        time_string = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-        filename = "故障记录统计图_%s.xlsx" % time_string
+        # 文件名称
+        filename = "故障记录_统计图_%s.xlsx" % self.time_string
 
         # 创建一个excel
         workbook = xlsxwriter.Workbook(filename)
