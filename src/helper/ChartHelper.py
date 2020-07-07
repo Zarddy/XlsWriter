@@ -175,7 +175,9 @@ class ChartHelper:
                 'name': sheet_name,
                 'categories': '=' + sheet_name + '!$B$2:$%c$2' % c,
                 'values': '=' + sheet_name + '!$B$3:$%c$3' % c,
-                "points": points  # 定义各饼块的颜色
+                # 添加显示在图表上的数值
+                'data_labels': {'value': True, 'font': {'size': 9}},
+                "points": points  # 定义各柱块的颜色
             }
 
             # 配置第一个系列数据
@@ -192,6 +194,17 @@ class ChartHelper:
             # 把图表插入到worksheet以及偏移
             worksheet.insert_chart('A7', chart_col, {'x_offset': 25, 'y_offset': 10, 'x_scale': 1.2, 'y_scale': 1.3})
 
+            # 数据集合
+            chart_data_series = {
+                # 这里的sheet1是默认的值，因为我们在新建sheet时没有指定sheet名
+                # 如果我们新建sheet时设置了sheet名，这里就要设置成相应的值
+                'name': sheet_name,
+                'categories': '=' + sheet_name + '!$B$2:$%c$2' % c,
+                'values': '=' + sheet_name + '!$B$3:$%c$3' % c,
+                # 添加显示在图表上的数值，不显示数值，显示分类、百分比，使用空格作为分隔符
+                'data_labels': {'value': False, 'category': True, 'percentage': True, 'font': {'size': 9}, 'separator': ' '},
+                "points": points  # 定义各扇块的颜色
+            }
             # 添加饼图
             chart3 = workbook.add_chart({"type": "pie"})
             chart3.add_series(chart_data_series)
